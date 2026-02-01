@@ -1,0 +1,28 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#FFC107" rx="100"/>
+  
+  <!-- Eye icon (similar to sidebar logo) -->
+  <g transform="translate(256, 256)">
+    <!-- Outer eye shape -->
+    <ellipse cx="0" cy="0" rx="120" ry="80" fill="none" stroke="#1F1F1F" stroke-width="16"/>
+    
+    <!-- Pupil -->
+    <circle cx="0" cy="0" r="40" fill="#1F1F1F"/>
+    
+    <!-- Highlight -->
+    <circle cx="-12" cy="-12" r="12" fill="#FFFFFF" opacity="0.8"/>
+  </g>
+  
+  <!-- Bottom text -->
+  <text 
+    x="256" 
+    y="440" 
+    font-family="Arial, sans-serif"
+    font-size="48" 
+    font-weight="bold" 
+    fill="#1F1F1F" 
+    text-anchor="middle">
+    TaskPilot
+  </text>
+</svg>
