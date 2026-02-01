@@ -88,7 +88,7 @@ export function Sidebar({isOpen, onClose}: SidebarProps) {
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gray-700 rounded-full" />
           <div className="text-sm">
-            <p className="font-medium">Free Digital Agency</p>
+            <p className="font-medium">TaskPilot v0.1.0</p>
           </div>
         </div>
       </div>
