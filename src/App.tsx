@@ -3,8 +3,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Login } from '@/pages/Login'
 import { Register } from '@/pages/Register'
 import { Dashboard } from '@/pages/Dashboard'
-import { Analytics, Teams, Documents, Settings } from '@/pages/Placeholder'
+import {TeamsPage} from '@/pages/TeamPage'
+import { Analytics,  Documents, Settings } from '@/pages/Placeholder'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { TeamDetailPage } from './pages/TeamDetailPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,7 +47,15 @@ function App() {
             path="/teams"
             element={
               <ProtectedRoute>
-                <Teams />
+                <TeamsPage />
+              </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/teams/:teamId"
+            element={
+              <ProtectedRoute>
+                <TeamDetailPage />
               </ProtectedRoute>
             }
           />

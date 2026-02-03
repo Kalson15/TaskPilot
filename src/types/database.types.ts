@@ -67,6 +67,55 @@ export interface Database {
           updated_at?: string
         }
       }
+      teams: {
+        Row:{
+          id: string
+          name:string
+          description: string | null
+          created_at:string
+          created_by:string
+          invite_code:string
+        }
+        Insert:{
+           id?: string
+          name:string
+          description?: string | null
+          created_at?:string
+          created_by:string
+          invite_code:string
+        }
+        Update:{
+           id?: string
+          name?:string
+          description?: string | null
+          created_at?:string
+          created_by?:string
+          invite_code?:string
+        }
+      }
+      team_members:{
+        Row:{
+          id:string
+          team_id:string
+          user_id:string
+          role:'owner' | 'member'
+          joined_at:string
+        }
+        Insert:{
+           id?:string
+          team_id:string
+          user_id:string
+          role?:'owner' | 'member'
+          joined_at?:string
+        }
+        Update:{
+           id?:string
+          team_id?:string
+          user_id?:string
+          role?:'owner' | 'member'
+          joined_at?:string
+        }
+      }
     }
   }
 }
@@ -78,3 +127,11 @@ export type TaskUpdate = Database['public']['Tables']['tasks']['Update']
 
 export type TaskStatus = 'backlog' | 'todo' | 'upcoming' | 'done'
 export type TaskPriority = 'low' | 'medium' | 'high'
+
+export type Team = Database['public']['Tables']['teams']['Row']
+export type TeamInsert = Database['public']['Tables']['teams']['Insert']
+export type TeamUpdate = Database['public']['Tables']['teams']['Update']
+
+export type TeamMember = Database['public']['Tables']['team_members']['Row']
+export type TeamMemberInsert = Database['public']['Tables']['team_members']['Insert']
+export type TeamMemberUpdate = Database['public']['Tables']['team_members']['Update']

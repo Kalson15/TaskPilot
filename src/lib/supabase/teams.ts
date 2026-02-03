@@ -1,0 +1,173 @@
+import { supabase } from "../supabase";
+import type { CreateTeamData, UpdateTeamData } from "@/types/team.types";
+
+
+
+//Create new team
+export async function createTeam(data: CreateTeamData, userId: string){
+   
+
+    const {data: team, error: teamError} = await supabase
+    .from('teams')
+    .insert({
+        name: data.name,
+        description: data.description || null,
+        
+        owner_id: userId,
+    })
+    .select()
+    .single()
+
+    if(teamError) throw teamError;
+
+    //Add createor as owner
+    const {error: memberError} = await supabase
+    .from('team_members')
+    .insert({
+        team_id: team.id,
+        user_id: userId,
+        role: 'owner',
+    })
+    if(memberError) throw memberError
+
+    return team;
+}
+
+//Get all teams for a user
+export async function getUserTeams(userId:string){
+    const {data, error} = await supabase
+    .from('team_members')
+    .select(`
+        team_id,
+        role,
+        joined_at,
+        teams:team_id (
+        id,
+        name,
+        description,
+        created_at,
+        updated_at,
+        owner_id
+        )
+        `)
+        .eq('user_id',userId)
+        .order('joined_at',{ascending: false});
+
+        if(error) throw error;
+
+        return data.map((item)=>({
+            ...item.teams,
+            role: item.role,
+            joined_at: item.joined_at,
+        }))
+}
+
+//get team by ID with members
+export async function getTeamById(teamId: string){
+    const{data, error} = await supabase
+    .from('teams')
+    .select('* , team_members ( id, user_id, role, joined_at )')
+        .eq('id',teamId)
+        .single();
+
+        if(error) throw error
+        return data;
+}
+
+//update team
+export async function updateTeam(teamId:string, data: UpdateTeamData){
+    const {data: team, error} = await supabase
+    .from('teams')
+    .update(data)
+    .eq('id', teamId)
+    .select()
+    .single()
+
+    if(error) throw error
+    return team;
+}
+
+//delete team
+export async function deleteTeam(teamId: string){
+    const{error} = await supabase
+    .from('teams')
+    .delete()
+    .eq('id', teamId)
+
+    if(error) throw error
+}
+
+
+
+//leave team
+export async function leaveTeam(teamId: string, userId: string){
+    const{error} = await supabase
+    .from('team_members')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('user_id', userId)
+
+    if(error) throw error
+}
+
+//get team members
+export async function getTeamMembers(teamId: string){
+    const { data: members, error: membersError } = await supabase
+        .from('team_members')
+        .select('id,user_id,role,joined_at')
+        .eq('team_id', teamId)
+        .order('joined_at', { ascending: true });
+
+    if (membersError) throw membersError;
+    if (!members || members.length === 0) return [];
+
+    const userIds = members.map((m: any) => m.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id,full_name,avatar_url')
+        .in('id', userIds);
+
+    if (profilesError) throw profilesError;
+
+    const profileMap = (profiles || []).reduce((acc: any, p: any) => {
+        acc[p.id] = p;
+        return acc;
+    }, {} as Record<string, any>);
+
+    return members.map((m: any) => ({
+        ...m,
+        profiles: profileMap[m.user_id]
+            ? {
+                  full_name: profileMap[m.user_id].full_name,
+                  avatar_url: profileMap[m.user_id].avatar_url,
+              }
+            : undefined,
+    }));
+}
+
+//remove team members- ownwer only
+export async function removeTeamMember(teamId:string, userId:string){
+    const{error} = await supabase
+    .from('team_members')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('user_id', userId)
+
+    if(error) throw error
+    
+}
+
+//update member role(owner only)
+export async function updateMemberRole(
+    teamId: string,
+    userId:string,
+    role: 'owner' | 'member'
+){
+    const{error} = await supabase
+    .from('team_members')
+    .update({role})
+    .eq('team_id', teamId)
+    .eq('user_id',userId)
+
+    if(error) throw error
+}
