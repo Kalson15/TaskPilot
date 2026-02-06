@@ -1,156 +1,205 @@
--- Phase 1: Initial Database Schema
--- Task Management Application
--- Created: 2026-01-31
+-- ==========================================
+-- COMPLETE SCHEMA RESET WITH PROPER RLS
+-- ==========================================
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Drop and recreate all policies to ensure clean slate
+DO $$ 
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN (SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP POLICY IF EXISTS ' || quote_ident(r.tablename) || '_policy ON ' || quote_ident(r.schemaname) || '.' || quote_ident(r.tablename) || ' CASCADE';
+    END LOOP;
+END $$;
 
--- ============================================================================
--- PROFILES TABLE
--- ============================================================================
-CREATE TABLE profiles (
-  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-  full_name TEXT,
-  avatar_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Disable RLS temporarily
+ALTER TABLE IF EXISTS profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS tasks DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS teams DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS team_members DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS projects DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS task_assignments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS comments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS notifications DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS activity_log DISABLE ROW LEVEL SECURITY;
 
-COMMENT ON TABLE profiles IS 'User profile information extended from auth.users';
-COMMENT ON COLUMN profiles.id IS 'References auth.users.id';
-COMMENT ON COLUMN profiles.full_name IS 'User full name from signup';
-COMMENT ON COLUMN profiles.avatar_url IS 'URL to user avatar image';
+-- Drop ALL existing policies
+DO $$ 
+DECLARE
+    pol RECORD;
+BEGIN
+    FOR pol IN 
+        SELECT schemaname, tablename, policyname 
+        FROM pg_policies 
+        WHERE schemaname = 'public'
+    LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', 
+            pol.policyname, pol.schemaname, pol.tablename);
+    END LOOP;
+END $$;
 
--- ============================================================================
--- TASKS TABLE
--- ============================================================================
-CREATE TABLE tasks (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT,
-  status TEXT CHECK (status IN ('backlog', 'todo', 'upcoming', 'done')) DEFAULT 'todo',
-  priority TEXT CHECK (priority IN ('low', 'medium', 'high')) DEFAULT 'medium',
-  due_date TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-COMMENT ON TABLE tasks IS 'User tasks with status, priority, and due dates';
-COMMENT ON COLUMN tasks.status IS 'Task status: backlog, todo, upcoming, done';
-COMMENT ON COLUMN tasks.priority IS 'Task priority: low, medium, high';
-COMMENT ON COLUMN tasks.due_date IS 'Optional deadline for task completion';
-
--- ============================================================================
--- INDEXES
--- ============================================================================
-CREATE INDEX idx_tasks_user_id ON tasks(user_id);
-CREATE INDEX idx_tasks_status ON tasks(status);
-CREATE INDEX idx_tasks_due_date ON tasks(due_date);
-
-COMMENT ON INDEX idx_tasks_user_id IS 'Fast lookup of tasks by user';
-COMMENT ON INDEX idx_tasks_status IS 'Fast filtering of tasks by status';
-COMMENT ON INDEX idx_tasks_due_date IS 'Fast sorting and filtering by due date';
-
--- ============================================================================
--- ROW LEVEL SECURITY (RLS)
--- ============================================================================
-
--- Enable RLS
+-- Re-enable RLS
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
 
--- Profiles policies
-CREATE POLICY "Users can view own profile"
+-- ==========================================
+-- PROFILES - Level 0 (No dependencies)
+-- ==========================================
+
+CREATE POLICY "profiles_allow_all_select"
   ON profiles FOR SELECT
-  USING (auth.uid() = id);
+  TO authenticated
+  USING (true);
 
-CREATE POLICY "Users can update own profile"
-  ON profiles FOR UPDATE
-  USING (auth.uid() = id);
-
-CREATE POLICY "Users can insert own profile"
+CREATE POLICY "profiles_allow_own_insert"
   ON profiles FOR INSERT
+  TO authenticated
   WITH CHECK (auth.uid() = id);
 
--- Tasks policies
-CREATE POLICY "Users can view own tasks"
-  ON tasks FOR SELECT
-  USING (auth.uid() = user_id);
+CREATE POLICY "profiles_allow_own_update"
+  ON profiles FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
 
-CREATE POLICY "Users can create own tasks"
-  ON tasks FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+-- ==========================================
+-- TEAMS - Level 1 (Only depends on profiles)
+-- ==========================================
 
-CREATE POLICY "Users can update own tasks"
-  ON tasks FOR UPDATE
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete own tasks"
-  ON tasks FOR DELETE
-  USING (auth.uid() = user_id);
-
--- ============================================================================
--- FUNCTIONS
--- ============================================================================
-
--- Function to automatically create profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+-- Function to check team ownership (avoids recursion)
+CREATE OR REPLACE FUNCTION is_team_owner(team_uuid UUID)
+RETURNS BOOLEAN AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, avatar_url)
-  VALUES (
-    NEW.id,
-    NEW.raw_user_meta_data->>'full_name',
-    NEW.raw_user_meta_data->>'avatar_url'
+  RETURN EXISTS (
+    SELECT 1 FROM teams WHERE id = team_uuid AND owner_id = auth.uid()
   );
-  RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
-COMMENT ON FUNCTION public.handle_new_user() IS 'Automatically creates a profile when a new user signs up';
-
--- Function to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+-- Function to check team membership (avoids recursion)
+CREATE OR REPLACE FUNCTION is_team_member(team_uuid UUID)
+RETURNS BOOLEAN AS $$
 BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
+  RETURN EXISTS (
+    SELECT 1 FROM team_members 
+    WHERE team_id = team_uuid AND user_id = auth.uid()
+  );
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
-COMMENT ON FUNCTION update_updated_at_column() IS 'Updates the updated_at column to current timestamp';
+CREATE POLICY "teams_select"
+  ON teams FOR SELECT
+  TO authenticated
+  USING (
+    owner_id = auth.uid() 
+    OR is_team_member(id)
+  );
 
--- ============================================================================
--- TRIGGERS
--- ============================================================================
+CREATE POLICY "teams_insert"
+  ON teams FOR INSERT
+  TO authenticated
+  WITH CHECK (owner_id = auth.uid());
 
--- Trigger to create profile on signup
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+CREATE POLICY "teams_update"
+  ON teams FOR UPDATE
+  TO authenticated
+  USING (owner_id = auth.uid())
+  WITH CHECK (owner_id = auth.uid());
 
--- Triggers for updated_at
-CREATE TRIGGER update_profiles_updated_at
-    BEFORE UPDATE ON profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE POLICY "teams_delete"
+  ON teams FOR DELETE
+  TO authenticated
+  USING (owner_id = auth.uid());
 
-CREATE TRIGGER update_tasks_updated_at
-    BEFORE UPDATE ON tasks
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+-- ==========================================
+-- TEAM_MEMBERS - Level 2 (Depends on teams)
+-- ==========================================
 
--- ============================================================================
--- SAMPLE DATA (Optional - for development/testing)
--- ============================================================================
+CREATE POLICY "team_members_select"
+  ON team_members FOR SELECT
+  TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR is_team_owner(team_id)
+  );
 
--- Uncomment below to insert sample data after user signup
-/*
--- Insert sample tasks for a user (replace 'user-uuid-here' with actual user ID)
-INSERT INTO tasks (user_id, title, description, status, priority, due_date) VALUES
-  ('user-uuid-here', 'Complete Phase 1 Development', 'Finish all core features for Phase 1', 'todo', 'high', NOW() + INTERVAL '7 days'),
-  ('user-uuid-here', 'Review Authentication Flow', 'Test all auth scenarios', 'upcoming', 'medium', NOW() + INTERVAL '3 days'),
-  ('user-uuid-here', 'Setup CI/CD Pipeline', 'Configure automatic deployments', 'backlog', 'low', NULL),
-  ('user-uuid-here', 'Write Documentation', 'Complete setup guide and README', 'done', 'medium', NOW() - INTERVAL '1 day');
-*/
+CREATE POLICY "team_members_insert"
+  ON team_members FOR INSERT
+  TO authenticated
+  WITH CHECK (is_team_owner(team_id));
+
+CREATE POLICY "team_members_update"
+  ON team_members FOR UPDATE
+  TO authenticated
+  USING (is_team_owner(team_id))
+  WITH CHECK (is_team_owner(team_id));
+
+CREATE POLICY "team_members_delete"
+  ON team_members FOR DELETE
+  TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR is_team_owner(team_id)
+  );
+
+-- ==========================================
+-- TASKS - Level 3 (Depends on teams and team_members)
+-- ==========================================
+
+CREATE POLICY "tasks_select"
+  ON tasks FOR SELECT
+  TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR assigned_to = auth.uid()
+    OR (team_id IS NOT NULL AND is_team_member(team_id))
+  );
+
+CREATE POLICY "tasks_insert"
+  ON tasks FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "tasks_update"
+  ON tasks FOR UPDATE
+  TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR (team_id IS NOT NULL AND is_team_owner(team_id))
+  )
+  WITH CHECK (
+    user_id = auth.uid()
+    OR (team_id IS NOT NULL AND is_team_owner(team_id))
+  );
+
+CREATE POLICY "tasks_delete"
+  ON tasks FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid());
+
+-- ==========================================
+-- GRANTS - Ensure authenticated users can access
+-- ==========================================
+
+GRANT ALL ON profiles TO authenticated;
+GRANT ALL ON tasks TO authenticated;
+GRANT ALL ON teams TO authenticated;
+GRANT ALL ON team_members TO authenticated;
+
+-- ==========================================
+-- VERIFICATION
+-- ==========================================
+
+-- Verify policies are created
+SELECT 
+    schemaname,
+    tablename,
+    policyname,
+    permissive,
+    roles,
+    cmd
+FROM pg_policies 
+WHERE schemaname = 'public'
+ORDER BY tablename, policyname;

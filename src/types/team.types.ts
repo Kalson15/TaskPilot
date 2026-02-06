@@ -26,4 +26,9 @@ export interface UpdateTeamData {
     description?: string;
 }
 
+export interface InviteMemberData{
+    email: string;
+    role?: TeamRole;
+}
+
 export type {Team, TeamMember, TeamRole}

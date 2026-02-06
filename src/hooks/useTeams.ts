@@ -5,12 +5,12 @@ import {useAuth} from './useAuth'
 import {
     createTeam as createTeamApi,
     getUserTeams,
-    getTeamById,
+    
     updateTeam as updateTeamApi,
     deleteTeam as deleteTeamapi,
     leaveTeam as leaveTeamApi,
 } from '../lib/supabase/teams';
-import type { CreateTeamData, UpdateTeamData, TeamWithMembers } from "@/types/team.types";
+import type { CreateTeamData, UpdateTeamData } from "@/types/team.types";
 
 export function useTeams(){
     const {user} = useAuth()

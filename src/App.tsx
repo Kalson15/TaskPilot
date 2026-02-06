@@ -7,6 +7,8 @@ import {TeamsPage} from '@/pages/TeamPage'
 import { Analytics,  Documents, Settings } from '@/pages/Placeholder'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { TeamDetailPage } from './pages/TeamDetailPage'
+import{JoinTeamPage} from '@/pages/JoinTeamPage'
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,11 +53,19 @@ function App() {
               </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/teams/:teamId"
             element={
               <ProtectedRoute>
                 <TeamDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teams/join/:inviteCode"
+            element={
+              <ProtectedRoute>
+                <JoinTeamPage />
               </ProtectedRoute>
             }
           />
@@ -81,7 +91,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
-  )
+  );
 }
 
 export default App

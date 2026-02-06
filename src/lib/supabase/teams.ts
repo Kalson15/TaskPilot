@@ -27,7 +27,7 @@ export async function createTeam(data: CreateTeamData, userId: string){
         team_id: team.id,
         user_id: userId,
         role: 'owner',
-    })
+    }  )
     if(memberError) throw memberError
 
     return team;
@@ -41,7 +41,7 @@ export async function getUserTeams(userId:string){
         team_id,
         role,
         joined_at,
-        teams:team_id (
+        teams (
         id,
         name,
         description,
@@ -54,19 +54,24 @@ export async function getUserTeams(userId:string){
         .order('joined_at',{ascending: false});
 
         if(error) throw error;
-
-        return data.map((item)=>({
-            ...item.teams,
+        
+       //transform the data to flatten the structure
+       return (data || []).map((item: any) => {
+        const team = Array.isArray(item.teams) ? item.teams[0] : item.teams;
+         return {
+            ...team,
             role: item.role,
             joined_at: item.joined_at,
-        }))
+        }
+       })
+       
 }
 
 //get team by ID with members
 export async function getTeamById(teamId: string){
     const{data, error} = await supabase
     .from('teams')
-    .select('* , team_members ( id, user_id, role, joined_at )')
+    .select('* , team_members ( id, user_id, role, joined_at, profiles(full_name, avatar_url) )')
         .eq('id',teamId)
         .single();
 
@@ -110,7 +115,7 @@ export async function leaveTeam(teamId: string, userId: string){
     if(error) throw error
 }
 
-//get team members
+//get team members 
 export async function getTeamMembers(teamId: string){
     const { data: members, error: membersError } = await supabase
         .from('team_members')
@@ -145,7 +150,7 @@ export async function getTeamMembers(teamId: string){
     }));
 }
 
-//remove team members- ownwer only
+//remove team members- ownwer only/admin
 export async function removeTeamMember(teamId:string, userId:string){
     const{error} = await supabase
     .from('team_members')
@@ -161,7 +166,7 @@ export async function removeTeamMember(teamId:string, userId:string){
 export async function updateMemberRole(
     teamId: string,
     userId:string,
-    role: 'owner' | 'member'
+    role: 'owner' | 'member' |'admin'|'guest'
 ){
     const{error} = await supabase
     .from('team_members')
@@ -170,4 +175,98 @@ export async function updateMemberRole(
     .eq('user_id',userId)
 
     if(error) throw error
+}
+
+//generate new invite code for team
+export async function regenerateInviteCode(teamId:string){
+    const newCode = Math.random().toString(36).substring(2, 12).toUpperCase()
+
+    const {data, error} = await supabase
+     .from('teams')
+     .update({invite_code: newCode})
+     .eq('id', teamId)
+     .select('invite_code')
+     .single()
+
+     if(error) throw error
+     return data.invite_code;
+}
+
+//join team by invite code
+export async function joinTeamByInviteCode(inviteCode: string, userId: string){
+    //find team by invite code
+    const {data: team, error:teamError} = await supabase
+    .from('teams')
+    .select('id, name')
+    .eq('invite_code', inviteCode)
+    .single()
+
+    if(teamError){
+        if(teamError.code == 'PGRST116'){
+            throw new Error('Invalid invite code')
+        }
+        throw teamError
+    }
+
+    //check if already a member
+    const {data: existing} = await supabase
+    .from('team_members')
+    .select('id')
+    .eq('team_id', team.id)
+    .eq('user_id', userId)
+    .single()
+
+    if(existing){
+        throw new Error('You are already a member of this team')
+    }
+
+    //Add as member
+    const {error: memberError} = await supabase
+    .from('team_members')
+    .insert({
+        team_id: team.id,
+        user_id: userId,
+        role: 'member',
+    })
+
+    if(memberError) throw memberError
+
+    return team
+}
+
+//send email invitation(placeholder -would integrate with email service)
+export async function inviteMemberByEmail(teamId: string, email:string){
+    //get team details
+    const{data:team, error:teamError} = await supabase
+    .from('teams')
+    .select('name, invite_code')
+    .eq('id', teamId)
+    .single()
+
+    if(teamError) throw teamError;
+
+    //for now we'll just return the invite link
+    const inviteLink = `${window.location.origin}/teams/join/${team.invite_code}`;
+
+    return{
+        inviteLink,
+        email,
+        teamName: team.name,
+    }
+
+
+}
+export async function getTeamByInviteCode(inviteCode: string){
+    const{data, error} = await supabase
+    .from('teams')
+    .select('id, name, description, created_at')
+    .eq('invite_code', inviteCode)
+    .single()
+
+    if(error){
+        console.error('Error fetching team preview:' , error)
+        throw new Error('Invalid or expired invite link')
+    }
+
+    return data
 }

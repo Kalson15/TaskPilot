@@ -41,6 +41,9 @@ export interface Database {
           status: 'backlog' | 'todo' | 'upcoming' | 'done'
           priority: 'low' | 'medium' | 'high'
           due_date: string | null
+          team_id: string | null
+          assigned_to: string | null
+          project_id: string | null
           created_at: string
           updated_at: string
         }
@@ -52,8 +55,12 @@ export interface Database {
           status?: 'backlog' | 'todo' | 'upcoming' | 'done'
           priority?: 'low' | 'medium' | 'high'
           due_date?: string | null
+          team_id?: string | null
+          assigned_to?: string | null
+          project_id?: string | null
           created_at?: string
           updated_at?: string
+          
         }
         Update: {
           id?: string
@@ -63,6 +70,9 @@ export interface Database {
           status?: 'backlog' | 'todo' | 'upcoming' | 'done'
           priority?: 'low' | 'medium' | 'high'
           due_date?: string | null
+          team_id?: string | null
+          assigned_to?: string | null
+          project_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -73,7 +83,8 @@ export interface Database {
           name:string
           description: string | null
           created_at:string
-          created_by:string
+          updated_at: string
+          owner_id:string
           invite_code:string
         }
         Insert:{
@@ -81,7 +92,8 @@ export interface Database {
           name:string
           description?: string | null
           created_at?:string
-          created_by:string
+          updated_at?:string
+          owner_id:string
           invite_code:string
         }
         Update:{
@@ -89,7 +101,8 @@ export interface Database {
           name?:string
           description?: string | null
           created_at?:string
-          created_by?:string
+          updated_at?:string
+          owner_id?:string
           invite_code?:string
         }
       }
@@ -98,22 +111,45 @@ export interface Database {
           id:string
           team_id:string
           user_id:string
-          role:'owner' | 'member'
+          role:'owner' | 'member' | 'admin' | 'guest'
           joined_at:string
         }
         Insert:{
            id?:string
           team_id:string
           user_id:string
-          role?:'owner' | 'member'
+          role?:'owner' | 'member' | 'admin' | 'guest'
           joined_at?:string
         }
         Update:{
            id?:string
           team_id?:string
           user_id?:string
-          role?:'owner' | 'member'
+          role?:'owner' | 'member' | 'admin' | 'guest'
           joined_at?:string
+        }
+      }
+      task_assignments:{
+        Row: {
+          id:string
+          task_id:string
+          user_id:string
+          assigned_at:string
+          assigned_by:string
+        }
+        Insert:{
+          id?:string
+          task_id:string
+          user_id:string
+          assigned_at?:string
+          assigned_by:string
+        }
+        Update:{
+          id?:string
+          task_id?:string
+          user_id?:string
+          assigned_at?:string
+          assigned_by?:string
         }
       }
     }
@@ -135,3 +171,7 @@ export type TeamUpdate = Database['public']['Tables']['teams']['Update']
 export type TeamMember = Database['public']['Tables']['team_members']['Row']
 export type TeamMemberInsert = Database['public']['Tables']['team_members']['Insert']
 export type TeamMemberUpdate = Database['public']['Tables']['team_members']['Update']
+
+export type TaskAssignment = Database['public']['Tables']['task_assignments']['Row']
+
+export type TeamRole = Database['public']['Tables']['team_members']['Row']['role']

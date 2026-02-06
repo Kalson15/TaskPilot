@@ -1,4 +1,4 @@
-## TaskPilot - Phase 1 MVP
+## TaskPilot 
 
 A modern, responsive task management application built with React, TypeScript, Supabase, and Tailwind CSS. This is the Phase 1 implementation focusing on core task management functionality and authentication.
 
@@ -55,12 +55,6 @@ npm install
 1. Go to [supabase.com](https://supabase.com)
 2. Create a new project
 3. Wait for the project to be ready
-
-#### Run Database Migrations
-
-
-
-
 
 ### 4. Configure Environment Variables
 
@@ -211,24 +205,6 @@ Make sure to set your environment variables in your deployment platform:
 - [x] Protected routes
 - [x] Error handling
 - [x] Loading states
-
-## 🔜 Coming in Phase 2
-
-- Team collaboration features
-- Task assignment to team members
-- Real-time updates
-- Comments on tasks
-- Activity feed
-- Enhanced permissions
-
-## 🔜 Coming in Phase 3
-
-- Analytics dashboard
-- Calendar integration
-- Document attachments
-- Time tracking
-- Advanced search and filters
-- Export functionality
 
 ## 📄 License
 

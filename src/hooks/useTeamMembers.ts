@@ -10,7 +10,7 @@ import{
 import type{TeamRole} from '../types/team.types'
 
 export function useTeamMembers(teamId:string | undefined){
-    const {user} = useAuth;
+    const {user} = useAuth();
     const[members, setMembers] = useState<any[]>([])
     const[loading,setLoading] = useState(true)
     const[error, setError] = useState<string | null>(null)

@@ -1,3 +1,5 @@
+// src/hooks/useTasks.ts
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Task, TaskInsert, TaskUpdate, TaskStatus } from '@/types/database.types'
@@ -8,8 +10,8 @@ export function useTasks(userId: string | undefined, status?: TaskStatus) {
     queryFn: async () => {
       if (!userId) return []
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let query: any = (supabase.from('tasks') as any)
+      let query = supabase
+        .from('tasks')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -21,7 +23,8 @@ export function useTasks(userId: string | undefined, status?: TaskStatus) {
       const { data, error } = await query
 
       if (error) throw error
-      return data as Task[]
+
+      return (data || []) as Task[]
     },
     enabled: !!userId,
   })
@@ -32,8 +35,8 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: async (task: TaskInsert) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from('tasks') as any)
+      const { data, error } = await supabase
+        .from('tasks')
         .insert(task)
         .select()
         .single()
@@ -43,6 +46,8 @@ export function useCreateTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['task-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] })
     },
   })
 }
@@ -52,8 +57,8 @@ export function useUpdateTask() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: TaskUpdate & { id: string }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from('tasks') as any)
+      const { data, error } = await supabase
+        .from('tasks')
         .update(updates)
         .eq('id', id)
         .select()
@@ -64,6 +69,8 @@ export function useUpdateTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['task-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] })
     },
   })
 }
@@ -73,13 +80,14 @@ export function useDeleteTask() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from('tasks') as any).delete().eq('id', id)
+      const { error } = await supabase.from('tasks').delete().eq('id', id)
 
       if (error) throw error
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['task-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['assigned-tasks'] })
     },
   })
 }
@@ -90,8 +98,8 @@ export function useTaskStats(userId: string | undefined) {
     queryFn: async () => {
       if (!userId) return { total: 0, today: 0, upcoming: 0, done: 0 }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from('tasks') as any)
+      const { data, error } = await supabase
+        .from('tasks')
         .select('status, due_date')
         .eq('user_id', userId)
 
@@ -115,5 +123,47 @@ export function useTaskStats(userId: string | undefined) {
       return stats
     },
     enabled: !!userId,
+  })
+}
+
+// Get tasks assigned to current user
+export function useAssignedToMeTasks(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['assigned-tasks', userId],
+    queryFn: async () => {
+      if (!userId) return []
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('assigned_to', userId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      return (data || []) as Task[]
+    },
+    enabled: !!userId,
+  })
+}
+
+// Get team tasks
+export function useTeamTasks(teamId: string | undefined) {
+  return useQuery({
+    queryKey: ['team-tasks', teamId],
+    queryFn: async () => {
+      if (!teamId) return []
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('team_id', teamId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      return (data || []) as Task[]
+    },
+    enabled: !!teamId,
   })
 }
