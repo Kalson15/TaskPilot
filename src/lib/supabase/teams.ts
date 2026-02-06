@@ -261,7 +261,7 @@ export async function getTeamByInviteCode(inviteCode: string){
     .from('teams')
     .select('id, name, description, created_at')
     .eq('invite_code', inviteCode)
-    .single()
+    .maybeSingle();
 
     if(error){
         console.error('Error fetching team preview:' , error)
