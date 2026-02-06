@@ -177,7 +177,8 @@ export function TeamInvite({
             disabled={!email.includes("@")}
             className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50 items-center justify-center gap-2"
           >
-            <Send className="w-3 h-3" /> Send Invite
+            <Send className="w-3 h-3" />
+             Send Invite
           </button>
         </form>
       </section>

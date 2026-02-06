@@ -162,7 +162,7 @@ export function TeamSettings({ team, onUpdate }: TeamSettingsProps) {
 
       {/*invite members section*/}
       {(isOwner || currentRole == "admin") && (
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[2rem] p-8 shadow-sm overflow-hidden">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
             Invite Team Members
           </h3>

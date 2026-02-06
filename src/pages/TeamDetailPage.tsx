@@ -55,7 +55,7 @@ export function TeamDetailPage() {
       { id: "dashboard", label: "Overview", icon: BarChart3 },
       { id: "tasks", label: "Workforce", icon: LayoutGrid },
       { id: "members", label: "Members", icon: Users },
-      { id: "settings", label: "Settins", icon: SettingsIcon },
+      { id: "settings", label: "Settings", icon: SettingsIcon },
     ],
     [],
   );
