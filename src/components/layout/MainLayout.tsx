@@ -66,7 +66,7 @@ export function MainLayout({ children, title, subtitle }: MainLayoutProps) {
 
         {/* Optional: Footer / Bottom Bar for Mobile */}
         <footer className="p-6 text-center text-slate-400 text-xs border-t border-slate-200 dark:border-slate-800 lg:hidden">
-          &copy; 2026 Your App Name
+          &copy; 2026 TaskPilot
         </footer>
       </div>
     </div>

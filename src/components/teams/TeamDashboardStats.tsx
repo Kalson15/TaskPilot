@@ -92,7 +92,7 @@ export function TeamDashboardStats({ stats }: TeamDashboardStatsProps) {
               Project Overview
             </h3>
           </div>
-          <span className="text-2xl md:text-3xl font-black text-primary italic">
+          <span className="text-2xl mt-2 md:text-3xl font-black text-primary italic">
             {stats.completionRate}%
           </span>
         </div>
@@ -107,8 +107,9 @@ export function TeamDashboardStats({ stats }: TeamDashboardStatsProps) {
         </div>
 
         <div className="flex items-center justify-betweenmt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          <span>{stats.completionRate} tasks resolved</span>
-          <span>{stats.totalTasks - stats.completedTasks} remaining</span>
+          <span>{stats.completionRate} tasks completed</span>
+          <span>****</span>
+          <span>{stats.totalTasks - stats.completedTasks} tasks remaining</span>
         </div>
       </div>
     </div>

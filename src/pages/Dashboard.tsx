@@ -9,7 +9,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { TaskCard } from "@/components/tasks/TaskCard";
-import { TaskFormData, TaskModal,  } from "@/components/tasks/TaskModal";
+import { TaskFormData, TaskModal } from "@/components/tasks/TaskModal";
 import { TaskFilterBar, TaskFilter } from "@/components/tasks/TaskFilterBar";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -91,33 +91,33 @@ export function Dashboard() {
     : 0;
 
   //guard against undefined user
-  if(!user){
-    return(
-      <MainLayout title='Dashboard'>
-        <div className='flex items-center justify-center min-h-[400px]'>
+  if (!user) {
+    return (
+      <MainLayout title="Dashboard">
+        <div className="flex items-center justify-center min-h-[400px]">
           <p className="text-gray-500">Please log in to view your tasks</p>
         </div>
       </MainLayout>
-    )
+    );
   }
 
   //handle task submission
-  const handleTaskSubmit = async (data: TaskFormData) =>{
-    try{
-      if(editingTask){
-        await updateTask.mutateAsync({id: editingTask.id, ...data})
-      }else{
+  const handleTaskSubmit = async (data: TaskFormData) => {
+    try {
+      if (editingTask) {
+        await updateTask.mutateAsync({ id: editingTask.id, ...data });
+      } else {
         await createTask.mutateAsync({
           ...data,
           user_id: user.id,
-        })
+        });
       }
-      setIsModalOpen(false)
-      setEditingTask(undefined)
-    }catch(err){
-      console.error('Task Submission failed:' , err)
+      setIsModalOpen(false);
+      setEditingTask(undefined);
+    } catch (err) {
+      console.error("Task Submission failed:", err);
     }
-  }
+  };
   return (
     <MainLayout
       title={`Hello, ${user?.user_metadata?.full_name?.split(" ")[0] || "there"}`}
@@ -277,10 +277,9 @@ export function Dashboard() {
           setIsModalOpen(false);
           setEditingTask(undefined);
         }}
-      
         onSubmit={handleTaskSubmit}
-       task={editingTask}
-       loading={createTask.isPending || updateTask.isPending}
+        task={editingTask}
+        loading={createTask.isPending || updateTask.isPending}
       />
     </MainLayout>
   );
@@ -333,7 +332,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         <LayoutGrid className="w-10 h-10 text-slate-300" />
       </div>
       <h3 className="text-xl font-bold text-slate-900 mb-2">No tasks found</h3>
-      <p className="text-slate-500 max-w-xs mb-8">
+      <p className="text-slate-700 max-w-xs mb-8">
         It looks like you're all caught up. Start your next project by creating
         a task.
       </p>

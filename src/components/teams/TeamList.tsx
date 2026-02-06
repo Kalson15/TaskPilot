@@ -33,7 +33,7 @@ export function TeamList() {
           <div className="absolute top-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
         <p className="text-slate-500 font-medium animate-pulse">
-          Synchronizing teams...
+          Loading teams...
         </p>
       </div>
     );

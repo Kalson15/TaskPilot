@@ -15,7 +15,7 @@ export function TeamSettings({ team, onUpdate }: TeamSettingsProps) {
   const navigate = useNavigate();
   const { updateTeam, deleteTeam, leaveTeam } = useTeams();
   const { getCurrentUserRole } = useTeamMembers(team.id);
-  const [inviteCode , setInviteCode] = useState(team.invite_code || null)
+  const [inviteCode, setInviteCode] = useState(team.invite_code || null);
 
   const [formData, setFormData] = useState<UpdateTeamData>({
     name: team.name,
@@ -87,7 +87,7 @@ export function TeamSettings({ team, onUpdate }: TeamSettingsProps) {
       </div>
 
       {/* Team Information Form */}
-      <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <section className="bg-white dark:bg-slate-900 rounded-[2rem] border dark:text-slate-400 border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="p-8">
           <form onSubmit={handleUpdate} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -161,17 +161,17 @@ export function TeamSettings({ team, onUpdate }: TeamSettingsProps) {
       </section>
 
       {/*invite members section*/}
-      {(isOwner || currentRole == 'admin') && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-          <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-4'>
+      {(isOwner || currentRole == "admin") && (
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm overflow-hidden">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
             Invite Team Members
           </h3>
-          <TeamInvite 
-           teamId={team.id}
-           inviteCode={inviteCode}
-           onInviteCodeUpdated={setInviteCode}
+          <TeamInvite
+            teamId={team.id}
+            inviteCode={inviteCode}
+            onInviteCodeUpdated={setInviteCode}
           />
-          </div>
+        </div>
       )}
 
       {/* Danger Zone */}

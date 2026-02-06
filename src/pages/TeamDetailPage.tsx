@@ -54,8 +54,8 @@ export function TeamDetailPage() {
     () => [
       { id: "dashboard", label: "Overview", icon: BarChart3 },
       { id: "tasks", label: "Workforce", icon: LayoutGrid },
-      { id: "members", label: "Directory", icon: Users },
-      { id: "settings", label: "Configure", icon: SettingsIcon },
+      { id: "members", label: "Members", icon: Users },
+      { id: "settings", label: "Settins", icon: SettingsIcon },
     ],
     [],
   );
@@ -104,7 +104,7 @@ export function TeamDetailPage() {
       <div className="space-y-6 md:space-y-8">
         {/* Navigation Bar */}
         <div className="w-full overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800 md:w-fit w-max">
+          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800 md:w-fit w-max dark:text-white">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -114,8 +114,8 @@ export function TeamDetailPage() {
                   onClick={() => setActiveTab(tab.id as TabType)}
                   className={`relative flex items-center gap-2 px-4 md:px-6 py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap${
                     isActive
-                      ? "text-slate-900 dark:text-white"
-                      : "text-slate-500 "
+                      ? "text-slate-900 dark:text-gray-500"
+                      : "text-slate-400 "
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 z-10" />
